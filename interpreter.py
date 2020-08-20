@@ -24,9 +24,9 @@ class Interpreter:
         line = ''.join(line)
         if cmd == '와!':
             if line[0] != '{': raise self.SyntaxError('Need an Variable')
-            b = line[1:line.rindex('}')]
+            b = line[1:line.index('}')]
             line = list(line)
-            del line[0:''.join(line).rindex('}') + 1]
+            del line[0:''.join(line).index('}') + 1]
             line = ''.join(line)
             c = self.get_string(line)
             self.variables[b] = c
@@ -35,9 +35,9 @@ class Interpreter:
         elif cmd == '파피루스':
             c = input()
             if line[0] != '{': raise self.SyntaxError('Need an Variable')
-            b = line[1:line.rindex('}')]
+            b = line[1:line.index('}')]
             line = list(line)
-            del line[1:''.join(line).rindex('}') + 1]
+            del line[1:''.join(line).index('}') + 1]
             line = ''.join(line)
             self.variables[b] = c
         elif cmd == '않임?':
@@ -54,9 +54,9 @@ class Interpreter:
                 self.variables['샌즈이긴횟수'] += 1
         elif cmd == '토비폭스': 
             if line[0] != '<': raise self.SyntaxError('Need an FUNCTION')
-            b = line[1:line.rindex('>')]
+            b = line[1:line.index('>')]
             line = list(line)
-            del line[0:''.join(line).rindex('>') + 1]
+            del line[0:''.join(line).index('>') + 1]
             line = ''.join(line)
             self.funcs[b] = line[1:]
         if cmd == '샌즈더스켈레톤': return self.get_string(line)
@@ -79,31 +79,59 @@ class Interpreter:
         while string:
             b = string[0]
             if b == '{':
-                c = string[1:string.rindex('}')]
+                c = string[1:string.index('}')]
                 string = list(string)
-                del string[1:''.join(string).rindex('}') + 1]
+                del string[1:''.join(string).index('}') + 1]
                 string = ''.join(string)
                 if c not in self.variables.keys(): raise self.NoVariable(c)
                 a += str(self.variables[c])
             elif b == '(':
-                c = string[1:string.rindex(')')]
+                c = string[1:string.index(')')]
                 string = list(string)
-                del string[1:''.join(string).rindex(')') + 1]
+                del string[1:''.join(string).index(')') + 1]
                 string = ''.join(string)
                 a += str(c)
             elif b == '[':
-                c = string[1:string.rindex(']')]
+                c = string[1:string.index(']')]
                 string = list(string)
-                del string[1:''.join(string).rindex(']') + 1]
+                del string[1:''.join(string).index(']') + 1]
                 string = ''.join(string)
                 if c not in self.variables.keys(): raise self.NoVariable(c)
                 a += str(len(str(self.variables[c])))
             elif b == '<':
-                c = string[1:string.rindex('>')]
+                c = string[1:string.index('>')]
                 string = list(string)
-                del string[1:''.join(string).rindex('>') + 1]
+                del string[1:''.join(string).index('>') + 1]
                 string = ''.join(string)
                 res = self.run(str(self.funcs[c]).replace(' 헐 ', '\n'))
+                a += res
+            elif b == '/':
+                c = string[1:string.index('\\')]
+                string = list(string)
+                del string[1:''.join(string).index('\\') + 1]
+                string = ''.join(string)
+                res = self.get_string(c)
+                if '+' in c:
+                    c = c.split('+')
+                    res = str(int(self.get_string(c[0])) + int(self.get_string(c[1])))
+                elif '-' in c:
+                    c = c.split('-')
+                    res = str(int(self.get_string(c[0])) - int(self.get_string(c[1])))
+                elif '**' in c:
+                    c = c.split('**')
+                    res = str(int(self.get_string(c[0])) ** int(self.get_string(c[1])))
+                elif '||' in c:
+                    c = c.split('||')
+                    res = str(int(self.get_string(c[0])) // int(self.get_string(c[1])))
+                elif '*' in c:
+                    c = c.split('*')
+                    res = str(int(self.get_string(c[0])) * int(self.get_string(c[1])))
+                elif '|' in c:
+                    c = c.split('|')
+                    res = str(int(self.get_string(c[0])) / int(self.get_string(c[1])))
+                elif '%' in c:
+                    c = c.split('%')
+                    res = str(int(self.get_string(c[0])) % int(self.get_string(c[1])))
                 a += res
             string = list(string)
             del string[0]
