@@ -103,7 +103,8 @@ class Interpreter:
                 string = list(string)
                 del string[1:''.join(string).rindex('>') + 1]
                 string = ''.join(string)
-                self.run(str(self.funcs[c]).replace(' 헐 ', '\n'))
+                res = self.run(str(self.funcs[c]).replace(' 헐 ', '\n'))
+                a += res
             string = list(string)
             del string[0]
             string = ''.join(string)
