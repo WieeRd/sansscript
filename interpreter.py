@@ -1,8 +1,49 @@
+from re import (
+    compile,
+    Pattern
+)
+
+NUMFOR = '샌즈이긴횟수'
+NORETURN = '키키'
+SET = '와!'
+PRINT = '샌즈'
+INPUT = '파피루스'
+IF = '않임?'
+FOR = '머멍이'
+FUN = '토비폭스'
+REQUIRE = '언더테일'
+RETURN = '끝'
+NL = ' 헐 '
+IS = '면'
+THIS = '가'
+WHILE = '동안'
+FILETYPE = 'sansscript'
+
+varreg = compile(r'\{.+?\}')
+funcreg = compile(r'<.+?>')
+
+stringreg = compile(r'((\(.+?\))|(\{.+?\})|(\[.+?\])|(<.+?>)|(/.+?\\))+')
+eachstrreg = compile(r'(\(.+?\))|(\{.+?\})|(\[.+?\])|(<.+?>)|(/.+?\\)')
+expressionreg = compile(r'-?[0-9]+(\+|\-|\*|\%|\^|\|)-?[0-9]+')
+findnumreg = compile(r'-?[0-9]+')
+findsignreg = compile(r'\+|\-|\*|\%|\^|\|')
+
+setreg = compile(r'\{.+?\} ((\(.+?\))|(\{.+?\})|(\[.+?\])|(<.+?>)|(/.+?\\))+')
+ifreg = compile(r'((\(.+?\))|(\{.+?\})|(\[.+?\])|(<.+?>)|(/.+?\\))+' + THIS + r'((\(.+?\))|(\{.+?\})|(\[.+?\])|(<.+?>)|(/.+?\\))+' + IS + r' .+?')
+forreg = compile(r'((\(.+?\))|(\{.+?\})|(\[.+?\])|(<.+?>)|(/.+?\\))+' + WHILE + r' .+?')
+funreg = compile(r'<.+?> .+?')
+returnreg = compile(r'((\(.+?\))|(\{.+?\})|(\[.+?\])|(<.+?>)|(/.+?\\))+')
+requirereg = compile(r'.+?\.' + FILETYPE)
+
+def find(reg: Pattern, string: str) -> list: return list([i.group() for i in reg.finditer(str(string))])
+def findc(patternstring: str, string: str) -> list: return list(find(compile(str(patternstring)), str(string)))
+def match(reg: Pattern, string: str) -> bool: return bool(reg.match(str(string)))
+
 class Interpreter:
     variables = {
-        '샌즈이긴횟수': 0,
-        '인디게임': ''
+        NUMFOR: 0
     }
+
     funcs = {
 
     }
@@ -12,154 +53,127 @@ class Interpreter:
         for line in text: 
             try: res = self.run_line(line)
             except Exception as e: 
-                print(e)
-                raise self.SyntaxError
-            if res != '키키': return res
-        return '키키'
+                raise self.Error(str(e))
+            if res != NORETURN: return res
+
+        return NORETURN
 
     def run_line(self, line):
-        cmd = line.split(' ')[0]
-        line = list(line)
-        del line[0:len(cmd) + 1]
-        line = ''.join(line)
-        if cmd == '와!':
-            if line[0] != '{': raise self.SyntaxError('Need an Variable')
-            b = line[1:line.index('}')]
-            line = list(line)
-            del line[0:''.join(line).index('}') + 1]
-            line = ''.join(line)
-            c = self.get_string(line)
-            self.variables[b] = c
+        cmd = line.split()[0]
+        line = line[len(cmd) + 1:]
 
-        elif cmd == '샌즈': print(self.get_string(line), end = '')
-        elif cmd == '파피루스':
-            c = input()
-            if line[0] != '{': raise self.SyntaxError('Need an Variable')
-            b = line[1:line.index('}')]
-            line = list(line)
-            del line[1:''.join(line).index('}') + 1]
-            line = ''.join(line)
-            self.variables[b] = c
+        if cmd == SET:
+            if not match(setreg, line): raise self.GrammarError('Invalid syntax')
+            vn = find(varreg, line)
+            if not vn: raise self.GrammarError('Need an Variable')
+            vn = vn[0]
+            self.variables[vn[1: len(vn) - 1]] = self.get_string(line[len(vn) + 1:])
 
-        elif cmd == '않임?':
-            do = str(line.split('면')[1][1:]).replace(' 헐 ', '\n')
-            line = line.split('면')[0]
-            first = line.split('가')[0] 
-            second = line.split('가')[1]
-            if self.get_string(first) == self.get_string(second): self.run(do)
+        elif cmd == PRINT: 
+            if not match(stringreg, line): raise self.GrammarError('Invalid syntax')
+            print(self.get_string(line))
 
-        elif cmd == '머멍이':
-            do = str(line.split('동안')[1][1:]).replace(' 헐 ', '\n')
-            whilel = int(self.get_string(line.split('동안')[0]))
-            for _ in range(whilel): 
+        elif cmd == INPUT:
+            if not match(varreg, line): raise self.GrammarError('Invalid syntax')
+            vn = find(varreg, line)
+            if not vn: raise self.GrammarError('Need an Variable')
+            vn = vn[0]
+            self.variables[vn[1: len(vn) - 1]] = input()
+
+        elif cmd == IF:
+            if not match(ifreg, line): raise self.GrammarError('Invalid syntax')
+            do = str(line.split(IS)[1][1:]).replace(NL, '\n')
+            line = line.split(IS)[0]
+            if self.get_string(line.split(THIS)[0] ) == self.get_string(line.split(THIS)[1]): self.run(do)
+
+        elif cmd == FOR:
+            if not match(forreg, line): raise self.GrammarError('Invalid syntax')
+            do = str(line.split(WHILE)[1][1:]).replace(NL, '\n')
+            for _ in range(int(self.get_string(line.split(WHILE)[0]))): 
                 self.run(do)
-                self.variables['샌즈이긴횟수'] += 1
+                self.variables[NUMFOR] += 1
 
-        elif cmd == '토비폭스': 
-            if line[0] != '<': raise self.SyntaxError('Need an FUNCTION')
-            b = line[1:line.index('>')]
-            line = list(line)
-            del line[0:''.join(line).index('>') + 1]
-            line = ''.join(line)
-            self.funcs[b] = line[1:]
+        elif cmd == FUN: 
+            if not match(funreg, line): raise self.GrammarError('Invalid syntax')
+            fn = find(funcreg, line)
+            if not fn: raise self.GrammarError('Need an FUNCTION')
+            fn = fn[0]
+            self.funcs[fn[1: len(fn) - 1]] = line[len(fn) + 1:]
 
-        elif cmd == '캐릭터구매':
-            res = run_file(line + '.sansscript')
+        elif cmd == REQUIRE:
+            if not match(requirereg, line): raise self.GrammarError('Invalid syntax')
+            res = run_file(line)
             self.funcs.update(res.funcs)
             self.variables.update(res.variables)
 
-        if cmd == '샌즈더스켈레톤': return self.get_string(line)
-        else: return '키키'
+        if cmd == RETURN: return self.get_string(line)
+        else: return NORETURN
+
     def get_string(self, string):
-        if len(string) < 2: raise self.NotaString
-        stri = string
-        inmunjayer = 0 
-        while stri:
-            if stri[0] in ['(', '{']: inmunjayer += 1
-            if stri[0] in [')', '}']: inmunjayer -= 1
-            if stri[0] == ' ' and not inmunjayer: 
-                stri = list(stri)
-                del stri[0]
-                stri = ''.join(stri)
-            stri = list(stri)
-            del stri[0]
-            stri = ''.join(stri)
-        a = ''
-        while string:
-            b = string[0]
-            if b == '{':
-                c = string[1:string.index('}')]
-                string = list(string)
-                del string[1:''.join(string).index('}') + 1]
-                string = ''.join(string)
-                if c not in self.variables.keys(): raise self.NoVariable(c)
-                a += str(self.variables[c])
+        res = find(stringreg, string)
+        if not res: raise self.NotaString(f'{string} is not a string')
+        res = find(eachstrreg, ''.join(res))
+        string = ''
 
-            elif b == '(':
-                c = string[1:string.index(')')]
-                string = list(string)
-                del string[1:''.join(string).index(')') + 1]
-                string = ''.join(string)
-                a += str(c)
+        for i in res:
+            typ = i[0]
+            name = i[1:len(i) - 1]
 
-            elif b == '[':
-                c = string[1:string.index(']')]
-                string = list(string)
-                del string[1:''.join(string).index(']') + 1]
-                string = ''.join(string)
-                if c not in self.variables.keys(): raise self.NoVariable(c)
-                a += str(len(str(self.variables[c])))
+            if typ == '{':
+                if name not in self.variables.keys(): raise self.NoVariable(name)
+                string += str(self.variables[name])
+            
+            elif typ == '(': 
+                string += name
+            
+            elif typ == '[':
+                string += str(len(self.get_string(name)))
+            
+            elif typ == '<':
+                if name not in self.funcs.keys(): raise self.NoFunction(name)
+                string += str(self.run(str(self.funcs[name]).replace(NL, '\n')))
+            
+            elif typ == '/':
+                expression = str(self.get_string(name))
+                if not match(expressionreg, expression): raise self.NotaExpression
 
-            elif b == '<':
-                c = string[1:string.index('>')]
-                string = list(string)
-                del string[1:''.join(string).index('>') + 1]
-                string = ''.join(string)
-                res = self.run(str(self.funcs[c]).replace(' 헐 ', '\n'))
-                a += res
-                
-            elif b == '/':
-                c = string[1:string.index('\\')]
-                string = list(string)
-                del string[1:''.join(string).index('\\') + 1]
-                string = ''.join(string)
-                res = self.get_string(c)
-                if '+' in c:
-                    c = c.split('+')
-                    res = str(int(self.get_string(c[0])) + int(self.get_string(c[1])))
-                elif '-' in c:
-                    c = c.split('-')
-                    res = str(int(self.get_string(c[0])) - int(self.get_string(c[1])))
-                elif '**' in c:
-                    c = c.split('**')
-                    res = str(int(self.get_string(c[0])) ** int(self.get_string(c[1])))
-                elif '||' in c:
-                    c = c.split('||')
-                    res = str(int(self.get_string(c[0])) // int(self.get_string(c[1])))
-                elif '*' in c:
-                    c = c.split('*')
-                    res = str(int(self.get_string(c[0])) * int(self.get_string(c[1])))
-                elif '|' in c:
-                    c = c.split('|')
-                    res = str(int(self.get_string(c[0])) / int(self.get_string(c[1])))
-                elif '%' in c:
-                    c = c.split('%')
-                    res = str(int(self.get_string(c[0])) % int(self.get_string(c[1])))
-                a += res
-            string = list(string)
-            del string[0]
-            string = ''.join(string)
-        return str(a).replace(' 헐 ', '\n')
+                signs = find(findsignreg, expression)
+                if len(signs) != 1: raise self.NotaExpression
+                sign = signs[0]
+                expression = expression.replace(sign, ' ')
+                nums = find(findnumreg, expression)
+                if len(nums) != 2: raise self.NotaExpression
+                a = int(nums[0])
+                b = int(nums[1])
+
+                if sign == '+': r = a + b
+                elif sign == '-': r = a - b
+                elif sign == '*': r = a * b
+                elif sign == '|': r = a // b
+                elif sign == '%': r = a % b
+                elif sign == '^': r = a ** b
+                string += str(r)
+
+        return str(string).replace(NL, '\n')
 
     class NotaString(Exception): 
-        def __init__(self): super().__init__('Not A string')
+        def __init__(self, msg = 'Not A string'): super().__init__(msg)
+    
+    class NotaExpression(Exception): 
+        def __init__(self, msg = 'Not A expression'): super().__init__(msg)
     
     class NoVariable(Exception): 
         def __init__(self, name: str):
             self.name = str(name)
             super().__init__(f'Variable {name} Not Exist')
     
-    class SyntaxError(Exception): pass
+    class NoFunction(Exception): 
+        def __init__(self, name: str):
+            self.name = str(name)
+            super().__init__(f'Function {name} Not Exist')
+    
+    class Error(Exception): pass
+    class GrammarError(Exception): pass
 
 def run_string(string: str): 
     a = Interpreter()
