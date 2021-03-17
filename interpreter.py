@@ -1,10 +1,14 @@
+#!/usr/bin/env python3
+import sys
 from re import (
     compile,
     Pattern
 )
+from typing import Union
 
 NUMFOR = '샌즈이긴횟수'
 NORETURN = '키키'
+COMMENT = '설명해드립니다'
 SET = '와!'
 PRINT = '샌즈'
 INPUT = '파피루스'
@@ -48,9 +52,9 @@ class Interpreter:
 
     }
 
-    def run(self, text: str) -> bool:
-        text = text.split('\n')
-        for line in text: 
+    def run(self, text: str) -> Union[bool, str]:
+        code = text.split('\n')
+        for line in code: 
             try: res = self.run_line(line)
             except Exception as e: 
                 raise self.Error(str(e))
@@ -59,10 +63,15 @@ class Interpreter:
         return NORETURN
 
     def run_line(self, line):
-        cmd = line.split()[0]
+        try: cmd = line.split()[0]
+        except IndexError: return NORETURN
+        # When reading from file, last line is empty and causes IndexError
         line = line[len(cmd) + 1:]
 
-        if cmd == SET:
+        if cmd == COMMENT:
+            return NORETURN
+
+        elif cmd == SET:
             if not match(setreg, line): raise self.GrammarError('Invalid syntax')
             vn = find(varreg, line)
             if not vn: raise self.GrammarError('Need an Variable')
@@ -107,7 +116,8 @@ class Interpreter:
             self.variables.update(res.variables)
 
         if cmd == RETURN: return self.get_string(line)
-        else: return NORETURN
+        else:
+            return NORETURN
 
     def get_string(self, string):
         res = find(stringreg, string)
@@ -152,6 +162,7 @@ class Interpreter:
                 elif sign == '|': r = a // b
                 elif sign == '%': r = a % b
                 elif sign == '^': r = a ** b
+                else: raise self.NotaExpression
                 string += str(r)
 
         return str(string).replace(NL, '\n')
@@ -180,5 +191,18 @@ def run_string(string: str):
     a.run(string)
     return a
 
-def run_file(name: str): return run_string(open(str(name), 'r', encoding = 'utf-8').read())
+def run_file(name: str):
+    return run_string(open(str(name), 'r', encoding = 'utf-8').read())
 
+if __name__=="__main__":
+    if len(sys.argv)>1: # 파일에서 읽어오기
+        run_file(sys.argv[1])
+    else: # 인터프리터 모드
+        a = Interpreter()
+        while True:
+            code = input(';) ')
+            try:
+                a.run(code)
+            except Exception as e:
+                print(f"{type(e).__name__}: {e}")
+# line 200!
