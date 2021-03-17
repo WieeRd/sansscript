@@ -117,7 +117,6 @@ class Interpreter:
 
         if cmd == RETURN: return self.get_string(line)
         else:
-            raise self.GrammarError('Invalid syntax')
             return NORETURN
 
     def get_string(self, string):

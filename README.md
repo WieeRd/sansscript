@@ -1,4 +1,8 @@
 # sansscript
+## 사용법
+* 인터프리터 모드: `interpreter.py`
+* 파일 불러오기: `interpreter.py <filename>`
+
 ## 문법 설명서
 
 ### 괄호 정리
