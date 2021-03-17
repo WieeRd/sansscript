@@ -194,3 +194,16 @@ def run_string(string: str):
 
 def run_file(name: str):
     return run_string(open(str(name), 'r', encoding = 'utf-8').read())
+
+if __name__=="__main__":
+    if len(sys.argv)>1: # 파일에서 읽어오기
+        run_file(sys.argv[1])
+    else: # 인터프리터 모드
+        a = Interpreter()
+        while True:
+            code = input(';) ')
+            try:
+                a.run(code)
+            except Exception as e:
+                print(f"{type(e).__name__}: {e}")
+# line 200!
